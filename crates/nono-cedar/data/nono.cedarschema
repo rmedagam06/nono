@@ -1,0 +1,86 @@
+// NONO Cedar Schema — canonical entity model for nono Cedar policies.
+// Version: 1.0
+//
+// Every entity type, action, and attribute used in nono Cedar policy files
+// must be declared here. Policies that reference undeclared types or attributes
+// will fail schema validation.
+
+namespace nono {
+
+  // ── Entity types ────────────────────────────────────────────────────────────
+
+  entity User = {
+    "os_username": String,
+    "groups": Set<String>,
+  };
+
+  entity Role = {};
+
+  entity Session = {
+    "principal": User,
+    "profile":   String,
+    "workdir":   String,
+    "os":        String,   // "linux" | "macos"
+    "roles":     Set<Role>,
+  };
+
+  entity File = {
+    "path":      String,
+    "sensitive": Bool,
+    "owner":     String,
+  };
+
+  entity Directory = {
+    "path":      String,
+    "sensitive": Bool,
+  };
+
+  entity NetworkEndpoint = {
+    "host":     String,
+    "port":     Long,
+    "protocol": String,   // "tcp" | "udp"
+  };
+
+  entity UnixSocket = {
+    "path": String,
+  };
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+
+  action "read_file" appliesTo {
+    principal: [User, Session],
+    resource:  [File],
+    context:   { "profile": String, "os": String },
+  };
+
+  action "write_file" appliesTo {
+    principal: [User, Session],
+    resource:  [File],
+    context:   { "profile": String, "os": String },
+  };
+
+  action "read_dir" appliesTo {
+    principal: [User, Session],
+    resource:  [Directory],
+    context:   { "profile": String, "os": String },
+  };
+
+  action "write_dir" appliesTo {
+    principal: [User, Session],
+    resource:  [Directory],
+    context:   { "profile": String, "os": String },
+  };
+
+  action "connect_network" appliesTo {
+    principal: [User, Session],
+    resource:  [NetworkEndpoint],
+    context:   { "profile": String, "os": String, "proxy_active": Bool },
+  };
+
+  action "connect_unix_socket" appliesTo {
+    principal: [User, Session],
+    resource:  [UnixSocket],
+    context:   { "profile": String, "os": String },
+  };
+
+}

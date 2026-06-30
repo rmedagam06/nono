@@ -88,8 +88,14 @@ mod tests {
 
     #[test]
     fn multiple_files_merge() {
-        let p1 = write_tmp("multi1", r#"@id("p1") permit(principal, action, resource);"#);
-        let p2 = write_tmp("multi2", r#"@id("p2") forbid(principal, action, resource);"#);
+        let p1 = write_tmp(
+            "multi1",
+            r#"@id("p1") permit(principal, action, resource);"#,
+        );
+        let p2 = write_tmp(
+            "multi2",
+            r#"@id("p2") forbid(principal, action, resource);"#,
+        );
         let ps = load_policy_set_from_files(&[&p1, &p2]).expect("merge should succeed");
         assert_eq!(ps.policies().count(), 2);
     }

@@ -41,10 +41,9 @@ pub fn load_entities_from_files(paths: &[impl AsRef<Path>]) -> Result<Entities> 
         })?;
         all_entities.extend(arr.iter().cloned());
     }
-    let merged_json = serde_json::to_string(&all_entities)
-        .map_err(|e| CedarError::EntityParse(e.to_string()))?;
-    Entities::from_json_str(&merged_json, None)
-        .map_err(|e| CedarError::EntityParse(e.to_string()))
+    let merged_json =
+        serde_json::to_string(&all_entities).map_err(|e| CedarError::EntityParse(e.to_string()))?;
+    Entities::from_json_str(&merged_json, None).map_err(|e| CedarError::EntityParse(e.to_string()))
 }
 
 #[cfg(test)]
