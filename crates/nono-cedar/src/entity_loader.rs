@@ -15,9 +15,7 @@ use crate::error::{CedarError, Result};
 /// `[{ "uid": ..., "attrs": {...}, "parents": [...] }, ...]`
 pub fn load_entities(path: &Path) -> Result<Entities> {
     let src = std::fs::read_to_string(path).map_err(CedarError::Io)?;
-    // Schema is not available yet at Phase 1; validation happens in Phase 2+.
-    Entities::from_json_str(&src, None)
-        .map_err(|e| CedarError::EntityParse(e.to_string()))
+    Entities::from_json_str(&src, None).map_err(|e| CedarError::EntityParse(e.to_string()))
 }
 
 /// Load and merge entities from multiple JSON files.
@@ -29,14 +27,18 @@ pub fn load_entities_from_files(paths: &[impl AsRef<Path>]) -> Result<Entities> 
     let mut all_entities: Vec<serde_json::Value> = Vec::new();
     for path in paths {
         let src = std::fs::read_to_string(path.as_ref()).map_err(CedarError::Io)?;
-        let parsed: serde_json::Value = serde_json::from_str(&src)
-            .map_err(|e| CedarError::EntityParse(format!("JSON parse error in {}: {e}", path.as_ref().display())))?;
-        let arr = parsed
-            .as_array()
-            .ok_or_else(|| CedarError::EntityParse(format!(
+        let parsed: serde_json::Value = serde_json::from_str(&src).map_err(|e| {
+            CedarError::EntityParse(format!(
+                "JSON parse error in {}: {e}",
+                path.as_ref().display()
+            ))
+        })?;
+        let arr = parsed.as_array().ok_or_else(|| {
+            CedarError::EntityParse(format!(
                 "entity file {} must contain a JSON array at the top level",
                 path.as_ref().display()
-            )))?;
+            ))
+        })?;
         all_entities.extend(arr.iter().cloned());
     }
     let merged_json = serde_json::to_string(&all_entities)
@@ -62,7 +64,6 @@ mod tests {
     fn empty_entity_list_loads() {
         let path = write_tmp("empty", "[]");
         let entities = load_entities(&path).expect("empty array is valid");
-        // Empty Entities: no panic, clean result.
         let _ = entities;
     }
 
@@ -100,9 +101,8 @@ mod tests {
 
     #[test]
     fn nonexistent_file_returns_io_error() {
-        let err =
-            load_entities(std::path::Path::new("/nonexistent/entities.json"))
-                .expect_err("missing file should fail");
+        let err = load_entities(std::path::Path::new("/nonexistent/entities.json"))
+            .expect_err("missing file should fail");
         assert!(matches!(err, CedarError::Io(_)));
     }
 
@@ -116,7 +116,6 @@ mod tests {
             "merge2",
             r#"[{"uid":{"type":"nono::User","id":"bob"},"attrs":{"os_username":"bob","groups":[]},"parents":[]}]"#,
         );
-        // Should merge two separate entity files without error.
         load_entities_from_files(&[&f1, &f2]).expect("merge should succeed");
     }
 }
