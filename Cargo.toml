@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/nono",
+    "crates/nono-cedar",
     "crates/nono-cli",
     "crates/nono-proxy",
     "bindings/c",
