@@ -175,12 +175,15 @@ mod tests {
     fn path_with_special_chars_escaped() {
         let cap = fake_fs_cap(r#"/tmp/file"name"#, AccessMode::Read, true);
         let reqs = fs_eval_requests(&[cap], 0);
-        assert!(reqs[0].resource_id.contains(r#"\""#), "quote must be escaped");
+        assert!(
+            reqs[0].resource_id.contains(r#"\""#),
+            "quote must be escaped"
+        );
     }
 
     #[test]
     fn unix_socket_request() {
-        use nono::{UnixSocketMode, SocketScope};
+        use nono::{SocketScope, UnixSocketMode};
         let cap = UnixSocketCapability {
             original: "/run/docker.sock".into(),
             resolved: "/run/docker.sock".into(),

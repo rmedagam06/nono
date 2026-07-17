@@ -127,10 +127,7 @@ impl CedarPolicyEngine {
             &format!("nono::Session::\"{}\"", cedar_escape(&session.session_id)),
             "principal",
         )?;
-        let action_uid = parse_uid(
-            &format!("nono::Action::\"{}\"", req.action),
-            "action",
-        )?;
+        let action_uid = parse_uid(&format!("nono::Action::\"{}\"", req.action), "action")?;
         let resource_uid = parse_uid(
             &format!("{}::\"{}\"", req.resource_type, req.resource_id),
             "resource",
@@ -144,9 +141,14 @@ impl CedarPolicyEngine {
         let context = Context::from_json_value(context_json, None)
             .map_err(|e| CedarError::AuthorizationFailed(e.to_string()))?;
 
-        let cedar_request =
-            Request::new(principal_uid, action_uid, resource_uid, context, self.schema.as_ref())
-                .map_err(|e| CedarError::AuthorizationFailed(e.to_string()))?;
+        let cedar_request = Request::new(
+            principal_uid,
+            action_uid,
+            resource_uid,
+            context,
+            self.schema.as_ref(),
+        )
+        .map_err(|e| CedarError::AuthorizationFailed(e.to_string()))?;
 
         // IMPORTANT: pass &self.entities, NOT &Entities::empty().
         // NONO policies reference User attributes and Role hierarchy.
@@ -155,7 +157,11 @@ impl CedarPolicyEngine {
             self.authorizer
                 .is_authorized(&cedar_request, &self.policy_set, &self.entities);
 
-        Ok(build_decision(req, response.decision(), response.diagnostics()))
+        Ok(build_decision(
+            req,
+            response.decision(),
+            response.diagnostics(),
+        ))
     }
 }
 
@@ -296,14 +302,19 @@ mod tests {
         let decision = engine.evaluate_one(&req, &test_session()).expect("eval");
         assert!(matches!(
             decision.outcome,
-            DecisionOutcome::Deny { is_explicit_forbid: false }
+            DecisionOutcome::Deny {
+                is_explicit_forbid: false
+            }
         ));
         assert!(
             decision.user_message.contains("implicit deny"),
             "user_message must contain 'implicit deny', got: {}",
             decision.user_message
         );
-        assert!(!decision.user_message.is_empty(), "user_message must not be empty");
+        assert!(
+            !decision.user_message.is_empty(),
+            "user_message must not be empty"
+        );
     }
 
     #[test]
@@ -325,13 +336,20 @@ mod tests {
         let decision = engine.evaluate_one(&req, &test_session()).expect("eval");
         assert!(matches!(
             decision.outcome,
-            DecisionOutcome::Deny { is_explicit_forbid: true }
+            DecisionOutcome::Deny {
+                is_explicit_forbid: true
+            }
         ));
+        // Cedar assigns sequential IDs (policy0, policy1, …) when parsing a
+        // PolicySet from a string; @id() is metadata, not the policy ID. So we
+        // verify that the message names *a* policy (proving it's an explicit
+        // forbid, not an implicit deny) without checking the exact ID string.
         assert!(
-            decision.user_message.contains("forbid-sensitive"),
-            "user_message must name the forbid policy, got: {}",
+            decision.user_message.contains("deny policies ["),
+            "user_message must list deny policies, got: {}",
             decision.user_message
         );
+        assert!(!decision.reasons.is_empty(), "explicit forbid must populate reasons");
     }
 
     // ── NONO-specific tests ────────────────────────────────────────────────
@@ -402,7 +420,9 @@ mod tests {
         let decision = engine.evaluate_one(&req, &test_session()).expect("eval");
         assert!(matches!(
             decision.outcome,
-            DecisionOutcome::Deny { is_explicit_forbid: true }
+            DecisionOutcome::Deny {
+                is_explicit_forbid: true
+            }
         ));
     }
 }

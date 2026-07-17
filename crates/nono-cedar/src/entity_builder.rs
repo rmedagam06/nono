@@ -243,9 +243,17 @@ mod tests {
 
     #[test]
     fn session_with_no_roles_builds() {
-        NonoEntityBuilder::new("bob", "sess-bob-001", "default", "/home/bob", "linux", &[], &[])
-            .build()
-            .expect("session with no roles should build");
+        NonoEntityBuilder::new(
+            "bob",
+            "sess-bob-001",
+            "default",
+            "/home/bob",
+            "linux",
+            &[],
+            &[],
+        )
+        .build()
+        .expect("session with no roles should build");
     }
 
     #[test]

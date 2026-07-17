@@ -20,5 +20,5 @@ pub use entity_loader::{load_entities, load_entities_from_files};
 pub use error::{CedarError, Result};
 pub use loader::{load_policy_set, load_policy_set_from_files};
 pub use request_builder::{EvalRequest, fs_eval_requests, unix_socket_eval_requests};
-pub use schema::{nono_schema, NONO_CEDAR_SCHEMA};
+pub use schema::{NONO_CEDAR_SCHEMA, nono_schema};
 pub use session::NonoSession;
