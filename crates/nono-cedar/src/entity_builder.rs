@@ -147,8 +147,7 @@ impl NonoEntityBuilder {
     pub fn build(self) -> Result<Entities> {
         let json = serde_json::to_string(&self.entities)
             .map_err(|e| CedarError::EntityParse(e.to_string()))?;
-        Entities::from_json_str(&json, None)
-            .map_err(|e| CedarError::EntityParse(e.to_string()))
+        Entities::from_json_str(&json, None).map_err(|e| CedarError::EntityParse(e.to_string()))
     }
 
     /// Serialize the entity set to a JSON string for debugging or snapshot tests.

@@ -349,7 +349,10 @@ mod tests {
             "user_message must list deny policies, got: {}",
             decision.user_message
         );
-        assert!(!decision.reasons.is_empty(), "explicit forbid must populate reasons");
+        assert!(
+            !decision.reasons.is_empty(),
+            "explicit forbid must populate reasons"
+        );
     }
 
     // ── NONO-specific tests ────────────────────────────────────────────────
