@@ -39,9 +39,13 @@ default = ["system-keyring"]
 system-keyring = ["dep:keyring", "nono/system-keyring", "nono-proxy/system-keyring"]
 # Enables test-only trust root overrides used by the integration harness.
 test-trust-overrides = []
+# Enables Cedar policy evaluation for capability filtering.
+# Rebuild with `--features cedar` to activate.
+cedar = ["dep:nono-cedar"]
 
 [dependencies]
 nono = { version = "0.66.0", path = "../nono", default-features = false }
+nono-cedar = { version = "0.66.0", path = "../nono-cedar", optional = true }
 nono-proxy = { version = "0.66.0", path = "../nono-proxy", default-features = false }
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"

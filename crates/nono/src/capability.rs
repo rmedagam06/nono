@@ -1270,6 +1270,52 @@ impl CapabilitySet {
         Ok(())
     }
 
+    /// Remove capabilities by their flat index in the combined fs + unix-socket space.
+    ///
+    /// Indices `0..fs_capabilities().len()` address filesystem capabilities;
+    /// indices `fs_capabilities().len()..` address Unix-socket capabilities with
+    /// the offset subtracted. Out-of-range indices are silently skipped.
+    ///
+    /// Returns the number of capabilities actually removed.
+    pub fn remove_caps_by_index(&mut self, indices: &[usize]) -> usize {
+        let n_fs = self.fs.len();
+        let mut fs_remove: Vec<usize> = indices.iter().filter(|&&i| i < n_fs).copied().collect();
+        let mut unix_remove: Vec<usize> = indices
+            .iter()
+            .filter(|&&i| i >= n_fs && i < n_fs + self.unix_sockets.len())
+            .map(|&i| i - n_fs)
+            .collect();
+
+        fs_remove.sort_unstable();
+        fs_remove.dedup();
+        fs_remove.reverse();
+        for &idx in &fs_remove {
+            self.fs.remove(idx);
+        }
+
+        unix_remove.sort_unstable();
+        unix_remove.dedup();
+        unix_remove.reverse();
+        for &idx in &unix_remove {
+            self.unix_sockets.remove(idx);
+        }
+
+        fs_remove.len() + unix_remove.len()
+    }
+
+    /// Downgrade the access mode of the filesystem capability at `fs_index`.
+    ///
+    /// `fs_index` is a direct index into `fs_capabilities()`. Only narrows:
+    /// only acts when the current mode is `ReadWrite`. Does nothing if the
+    /// index is out of range or the cap is not `ReadWrite`.
+    pub fn downgrade_fs_access(&mut self, fs_index: usize, new_mode: AccessMode) {
+        if let Some(cap) = self.fs.get_mut(fs_index)
+            && cap.access == AccessMode::ReadWrite
+        {
+            cap.access = new_mode;
+        }
+    }
+
     /// Remove exact file capabilities whose original or resolved path matches
     /// any of the provided denied paths.
     ///

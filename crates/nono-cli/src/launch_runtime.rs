@@ -373,6 +373,66 @@ pub(crate) fn prepare_run_launch_plan(
         .ok()
         .filter(|id| !id.is_empty())
         .unwrap_or_else(crate::session::generate_session_id);
+
+    // Cedar authorization filter — runs before sandbox is applied.
+    // Merge CLI args with profile-level Cedar config (CLI takes precedence for mode).
+    let merged_cedar_policy: Vec<std::path::PathBuf> = prepared
+        .profile_cedar_policy
+        .iter()
+        .chain(args.cedar_policy.iter())
+        .cloned()
+        .collect();
+    let merged_cedar_entities: Vec<std::path::PathBuf> = prepared
+        .profile_cedar_entities
+        .iter()
+        .chain(args.cedar_entities.iter())
+        .cloned()
+        .collect();
+    let cedar_mode = if args.cedar_policy.is_empty() {
+        // No CLI override — use profile mode if set.
+        match prepared.profile_cedar_mode {
+            Some(crate::profile::CedarModeConfig::Strict) => {
+                crate::cedar_session::CedarFilterMode::Strict
+            }
+            _ => crate::cedar_session::CedarFilterMode::Narrow,
+        }
+    } else {
+        args.cedar_mode
+    };
+    if !merged_cedar_policy.is_empty() {
+        if let Some(session_args) = crate::cedar_session::build_session_args(
+            &session_id,
+            args.profile.as_deref().unwrap_or(""),
+            &scan_root,
+            &merged_cedar_policy,
+        ) {
+            let cedar_result = crate::cedar_runtime::maybe_apply_cedar(
+                &mut prepared.caps,
+                &merged_cedar_policy,
+                &merged_cedar_entities,
+                &session_args,
+                cedar_mode,
+            )?;
+            if let Some(ref result) = cedar_result {
+                if !silent && (result.removed_count > 0 || result.downgraded_count > 0) {
+                    eprintln!(
+                        "  [nono cedar] {} capability(ies) removed, {} downgraded",
+                        result.removed_count, result.downgraded_count
+                    );
+                }
+                for denied in &result.denied {
+                    if !denied.user_message.is_empty() {
+                        tracing::warn!(
+                            "Cedar denied cap {}: {}",
+                            denied.cap_index,
+                            denied.user_message
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     let network = prepare_proxy_launch_options(&args, &prepared, silent, session_id.clone())?;
     let rollback_options = prepare_rollback_launch_options(
         &run_args.rollback_exclude,

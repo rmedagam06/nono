@@ -191,6 +191,17 @@ pub enum NonoError {
     /// reads as an intentional cancellation, not a fault.
     #[error("{0}")]
     Cancelled(String),
+
+    // Cedar authorization errors
+    /// A Cedar policy explicitly forbade a capability (`forbid` rule matched).
+    /// This is always a hard error — the user's policy intentionally blocked
+    /// the access, and the reason is shown verbatim so they know which rule fired.
+    #[error("Cedar policy denied access: {reason}")]
+    CedarDenied { reason: String },
+
+    /// Cedar policy files or entity files could not be loaded or parsed.
+    #[error("Cedar policy error: {0}")]
+    CedarPolicy(String),
 }
 
 /// Result type alias for nono operations
@@ -254,6 +265,8 @@ impl NonoError {
             | Self::Snapshot(_) => NonoDiagnosticCode::Other,
             #[cfg(target_os = "linux")]
             Self::Landlock(_) | Self::LandlockPath(_) => NonoDiagnosticCode::SandboxDeniedPath,
+            Self::CedarDenied { .. } => NonoDiagnosticCode::CedarPolicyDenied,
+            Self::CedarPolicy(_) => NonoDiagnosticCode::ConfigurationError,
         }
     }
 
@@ -283,7 +296,9 @@ impl NonoError {
             Self::ProfileNotFound(_)
             | Self::ProfileParse(_)
             | Self::NoCapabilities
-            | Self::ConfigParse(_) => Some(NonoRemediation::CheckPolicy),
+            | Self::ConfigParse(_)
+            | Self::CedarPolicy(_)
+            | Self::CedarDenied { .. } => Some(NonoRemediation::CheckPolicy),
             _ => None,
         }
     }

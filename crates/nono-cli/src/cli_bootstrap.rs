@@ -238,7 +238,8 @@ fn cli_verbosity(cli: &Cli) -> u8 {
         | Commands::Outdated(_)
         | Commands::OpenUrlHelper(_)
         | Commands::PackUpdateHintHelper(_)
-        | Commands::Completions(_) => 0,
+        | Commands::Completions(_)
+        | Commands::Cedar(_) => 0,
     }
 }
 

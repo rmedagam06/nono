@@ -1,4 +1,5 @@
 use crate::audit_commands;
+use crate::cedar_cmd;
 use crate::cli::{Cli, Commands, RunArgs, SetupArgs};
 use crate::command_runtime::{run_sandbox, run_shell, run_wrap};
 use crate::completions::run_completions;
@@ -120,6 +121,9 @@ fn dispatch_command(
         Commands::OpenUrlHelper(args) => run_open_url_helper(args),
         Commands::PackUpdateHintHelper(args) => crate::pack_update_hint::run_refresh_helper(args),
         Commands::Completions(args) => run_completions(args),
+        Commands::Cedar(args) => {
+            run_command_with_update(update_handle, silent, || cedar_cmd::run_cedar(args))
+        }
     }
 }
 

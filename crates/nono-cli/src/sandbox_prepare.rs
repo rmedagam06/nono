@@ -456,6 +456,12 @@ pub(crate) struct PreparedSandbox {
     /// True when the profile or CLI requested HTTP/2 to upstream servers
     /// (`network.allow_http2` or `--allow-http2`).
     pub(crate) allow_http2_requested: bool,
+    /// Cedar policy file(s) from the profile (merged with CLI --cedar-policy at launch time).
+    pub(crate) profile_cedar_policy: Vec<std::path::PathBuf>,
+    /// Cedar entity file(s) from the profile (merged with CLI --cedar-entities at launch time).
+    pub(crate) profile_cedar_entities: Vec<std::path::PathBuf>,
+    /// Cedar filter mode from the profile (CLI --cedar-mode takes precedence if specified).
+    pub(crate) profile_cedar_mode: Option<profile::CedarModeConfig>,
 }
 
 fn resolved_workdir(args: &SandboxArgs) -> PathBuf {
@@ -1186,6 +1192,9 @@ pub(crate) fn prepare_sandbox(args: &SandboxArgs, silent: bool) -> Result<Prepar
                 set_vars: None,
                 profile_network_block: false,
                 allow_http2_requested: args.allow_http2,
+                profile_cedar_policy: Vec::new(),
+                profile_cedar_entities: Vec::new(),
+                profile_cedar_mode: None,
             },
             &[],
             args,
@@ -1482,6 +1491,21 @@ pub(crate) fn prepare_sandbox(args: &SandboxArgs, silent: bool) -> Result<Prepar
         .unwrap_or(false);
     let allow_http2_requested = args.allow_http2 || profile_allow_http2;
 
+    let profile_cedar_policy = loaded_profile
+        .as_ref()
+        .and_then(|p| p.cedar.as_ref())
+        .map(|c| c.policy.clone())
+        .unwrap_or_default();
+    let profile_cedar_entities = loaded_profile
+        .as_ref()
+        .and_then(|p| p.cedar.as_ref())
+        .map(|c| c.entities.clone())
+        .unwrap_or_default();
+    let profile_cedar_mode = loaded_profile
+        .as_ref()
+        .and_then(|p| p.cedar.as_ref())
+        .map(|c| c.mode);
+
     let profile_secrets = loaded_profile
         .as_ref()
         .map(|profile| profile.env_credentials.mappings.clone())
@@ -1533,6 +1557,9 @@ pub(crate) fn prepare_sandbox(args: &SandboxArgs, silent: bool) -> Result<Prepar
             set_vars: profile_set_vars,
             profile_network_block,
             allow_http2_requested,
+            profile_cedar_policy,
+            profile_cedar_entities,
+            profile_cedar_mode,
         },
         &blocked_grants,
         args,
@@ -2013,6 +2040,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         }
     }
 

@@ -1895,6 +1895,35 @@ pub struct RollbackConfig {
     pub exclude_globs: Vec<String>,
 }
 
+/// Cedar authorization policy configuration embedded in a profile.
+///
+/// When present, the listed policy file(s) are evaluated against the session's
+/// capability set before the sandbox is applied. Capabilities denied by Cedar
+/// are silently removed (Narrow mode) or cause a hard error (Strict mode).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CedarConfig {
+    /// Cedar policy file(s) to evaluate (relative to the profile directory or absolute).
+    #[serde(default)]
+    pub policy: Vec<std::path::PathBuf>,
+    /// Cedar entity file(s) to merge with the auto-generated session entities.
+    #[serde(default)]
+    pub entities: Vec<std::path::PathBuf>,
+    /// How Cedar handles implicitly-denied capabilities.
+    /// `"narrow"` (default) removes them silently; `"strict"` is a hard error.
+    #[serde(default)]
+    pub mode: CedarModeConfig,
+}
+
+/// Filter mode for profile-level Cedar evaluation.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CedarModeConfig {
+    #[default]
+    Narrow,
+    Strict,
+}
+
 /// Controls which environment variables are passed to the sandboxed process.
 ///
 /// By default, all environment variables are inherited from the parent process.
@@ -2117,6 +2146,10 @@ pub struct Profile {
     /// first-class capability.
     #[serde(default)]
     pub unsafe_macos_seatbelt_rules: Vec<String>,
+    /// Cedar authorization policy evaluated before the sandbox is applied.
+    /// When present, capabilities denied by Cedar are filtered from the set.
+    #[serde(default)]
+    pub cedar: Option<CedarConfig>,
 }
 
 #[derive(Deserialize)]
@@ -2184,6 +2217,8 @@ struct ProfileDeserialize {
     command_args: Vec<String>,
     #[serde(default)]
     unsafe_macos_seatbelt_rules: Vec<String>,
+    #[serde(default)]
+    cedar: Option<CedarConfig>,
 }
 
 impl From<ProfileDeserialize> for Profile {
@@ -2221,6 +2256,7 @@ impl From<ProfileDeserialize> for Profile {
             binary: raw.binary,
             command_args: raw.command_args,
             unsafe_macos_seatbelt_rules: raw.unsafe_macos_seatbelt_rules,
+            cedar: raw.cedar,
         };
 
         // Drain legacy keys into canonical sections (no-op unless the legacy
@@ -3289,6 +3325,7 @@ fn merge_profiles(base: Profile, child: Profile) -> Profile {
             &base.unsafe_macos_seatbelt_rules,
             &child.unsafe_macos_seatbelt_rules,
         ),
+        cedar: child.cedar.clone().or_else(|| base.cedar.clone()),
     }
 }
 
@@ -5445,6 +5482,7 @@ mod tests {
             binary: None,
             command_args: vec![],
             unsafe_macos_seatbelt_rules: vec![],
+            cedar: None,
         }
     }
 
@@ -5530,6 +5568,7 @@ mod tests {
             binary: None,
             command_args: vec![],
             unsafe_macos_seatbelt_rules: vec![],
+            cedar: None,
         }
     }
 

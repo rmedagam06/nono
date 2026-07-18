@@ -14,4 +14,6 @@
 ignore = [
     "RUSTSEC-2026-0044", # AWS-LC X.509 CN/name-constraints bypass
     "RUSTSEC-2026-0048", # AWS-LC CRL distribution point scope check bypass
+    "RUSTSEC-2026-0204", # crossbeam-epoch 0.9.18 — transitive dep of cedar-policy 4.5;
+                         # remove when cedar-policy upgrades crossbeam-epoch to >=0.9.20
 ]

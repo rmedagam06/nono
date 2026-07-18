@@ -34,6 +34,9 @@ pub enum NonoDiagnosticCode {
     TrustVerificationFailed,
     IoError,
     Cancelled,
+    /// A Cedar `forbid` rule explicitly blocked a capability before sandbox
+    /// enforcement. The error message contains the policy ID and reason.
+    CedarPolicyDenied,
     Other,
 }
 

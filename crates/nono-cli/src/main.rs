@@ -11,6 +11,9 @@ mod audit_integrity;
 mod audit_ledger;
 mod audit_session;
 mod capability_ext;
+mod cedar_cmd;
+mod cedar_runtime;
+mod cedar_session;
 mod cli;
 mod cli_bootstrap;
 mod command_blocking_deprecation;
@@ -310,6 +313,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         };
 
         let effective = resolve_effective_proxy_settings(&args, &prepared);
@@ -370,6 +376,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         };
 
         let effective = resolve_effective_proxy_settings(&args, &prepared);
