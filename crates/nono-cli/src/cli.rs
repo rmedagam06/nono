@@ -667,6 +667,23 @@ IN-BAND DETACH:
 ")]
     Completions(CompletionsArgs),
 
+    /// Validate, evaluate, and explain Cedar authorization policies
+    #[command(subcommand_help_heading = "COMMANDS", disable_help_subcommand = true)]
+    #[command(help_template = "\
+{about}
+
+\x1b[1mUSAGE\x1b[0m
+  nono cedar <command>
+
+{all-args}
+{after-help}")]
+    #[command(after_help = "\x1b[1mEXAMPLES\x1b[0m
+  nono cedar validate --policy policy.cedar        # Validate a Cedar policy file
+  nono cedar eval --policy p.cedar --resource /tmp # Test a single resource
+  nono cedar explain --policy p.cedar --path /home # Explain decisions for a path
+")]
+    Cedar(CedarArgs),
+
     /// Internal: open a URL via supervisor IPC
     #[command(hide = true)]
     OpenUrlHelper(OpenUrlHelperArgs),
@@ -1402,6 +1419,37 @@ pub struct SandboxArgs {
     )]
     pub config: Option<PathBuf>,
 
+    // ── Cedar authorization ───────────────────────────────────────────────
+    /// Cedar policy file(s) to evaluate against the capability set (repeatable).
+    /// Capabilities denied by Cedar are removed before the sandbox is applied.
+    /// Requires `--features cedar` at build time; a hard error is returned
+    /// otherwise (never silently ignored).
+    #[arg(
+        long = "cedar-policy",
+        value_name = "FILE",
+        help_heading = "CEDAR"
+    )]
+    pub cedar_policy: Vec<PathBuf>,
+
+    /// Cedar entity file(s) to merge with the auto-generated session entities (repeatable).
+    #[arg(
+        long = "cedar-entities",
+        value_name = "FILE",
+        help_heading = "CEDAR"
+    )]
+    pub cedar_entities: Vec<PathBuf>,
+
+    /// How Cedar handles implicitly-denied capabilities (narrow = remove silently,
+    /// strict = hard error). Explicit `forbid(...)` matches always hard-error.
+    #[arg(
+        long = "cedar-mode",
+        value_enum,
+        default_value = "narrow",
+        help_heading = "CEDAR"
+    )]
+    pub cedar_mode: crate::cedar_session::CedarFilterMode,
+
+    // ── General ──────────────────────────────────────────────────────────
     /// Enable verbose output
     #[arg(long, short = 'v', action = clap::ArgAction::Count, help_heading = "OPTIONS")]
     pub verbose: u8,
@@ -1679,6 +1727,9 @@ impl From<WrapSandboxArgs> for SandboxArgs {
             allow_launch_services: args.allow_launch_services,
             allow_gpu: args.allow_gpu,
             allow_http2: false,
+            cedar_policy: Vec::new(),
+            cedar_entities: Vec::new(),
+            cedar_mode: crate::cedar_session::CedarFilterMode::Narrow,
             config: args.config,
             verbose: args.verbose,
             dry_run: args.dry_run,
@@ -2613,6 +2664,115 @@ pub struct TrustExportKeyArgs {
     /// Output as PEM instead of base64 DER
     #[arg(long)]
     pub pem: bool,
+
+    /// Print help
+    #[arg(long, short = 'h', action = clap::ArgAction::Help, help_heading = "OPTIONS")]
+    pub help: Option<bool>,
+}
+
+// ---------------------------------------------------------------------------
+// Cedar subcommand args
+// ---------------------------------------------------------------------------
+
+#[derive(Parser, Debug)]
+#[command(disable_help_flag = true)]
+pub struct CedarArgs {
+    #[command(subcommand)]
+    pub command: CedarCommands,
+
+    /// Print help
+    #[arg(long, short = 'h', action = clap::ArgAction::Help, help_heading = "OPTIONS")]
+    pub help: Option<bool>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CedarCommands {
+    /// Parse and schema-validate Cedar policy file(s)
+    Validate(CedarValidateArgs),
+    /// Evaluate a Cedar policy against a single resource
+    Eval(CedarEvalArgs),
+    /// Explain Cedar decisions for a simulated capability set
+    Explain(CedarExplainArgs),
+}
+
+#[derive(Parser, Debug)]
+#[command(disable_help_flag = true)]
+#[command(after_help = "\x1b[1mEXAMPLES\x1b[0m
+  nono cedar validate --policy policy.cedar
+  nono cedar validate --policy policy.cedar --no-schema
+")]
+pub struct CedarValidateArgs {
+    /// Cedar policy file(s) to validate (repeatable)
+    #[arg(long = "policy", value_name = "FILE", required = true)]
+    pub policy: Vec<PathBuf>,
+
+    /// Skip NONO schema validation (parse-only)
+    #[arg(long)]
+    pub no_schema: bool,
+
+    /// Print help
+    #[arg(long, short = 'h', action = clap::ArgAction::Help, help_heading = "OPTIONS")]
+    pub help: Option<bool>,
+}
+
+#[derive(Parser, Debug)]
+#[command(disable_help_flag = true)]
+#[command(after_help = "\x1b[1mEXAMPLES\x1b[0m
+  nono cedar eval --policy policy.cedar --resource /tmp --action read_dir
+  nono cedar eval --policy policy.cedar --resource /etc/passwd --action read_file
+")]
+pub struct CedarEvalArgs {
+    /// Cedar policy file(s) to load (repeatable)
+    #[arg(long = "policy", value_name = "FILE", required = true)]
+    pub policy: Vec<PathBuf>,
+
+    /// Cedar entity file(s) to merge (repeatable)
+    #[arg(long = "entities", value_name = "FILE")]
+    pub entities: Vec<PathBuf>,
+
+    /// Resource path to evaluate (e.g. /home/alice)
+    #[arg(long)]
+    pub resource: Option<String>,
+
+    /// Cedar action to evaluate (e.g. read_dir, write_file)
+    #[arg(long)]
+    pub action: Option<String>,
+
+    /// Profile name (used as Cedar context attribute)
+    #[arg(long, short = 'p')]
+    pub profile: Option<String>,
+
+    /// Print help
+    #[arg(long, short = 'h', action = clap::ArgAction::Help, help_heading = "OPTIONS")]
+    pub help: Option<bool>,
+}
+
+#[derive(Parser, Debug)]
+#[command(disable_help_flag = true)]
+#[command(after_help = "\x1b[1mEXAMPLES\x1b[0m
+  nono cedar explain --policy policy.cedar --path /home/alice
+  nono cedar explain --policy policy.cedar --path /tmp --path /etc --strict
+")]
+pub struct CedarExplainArgs {
+    /// Cedar policy file(s) to load (repeatable)
+    #[arg(long = "policy", value_name = "FILE", required = true)]
+    pub policy: Vec<PathBuf>,
+
+    /// Cedar entity file(s) to merge (repeatable)
+    #[arg(long = "entities", value_name = "FILE")]
+    pub entities: Vec<PathBuf>,
+
+    /// Path(s) to simulate as ReadWrite capabilities (repeatable)
+    #[arg(long, required = true)]
+    pub path: Vec<PathBuf>,
+
+    /// Use Strict mode: any denial is a hard error (default: Narrow)
+    #[arg(long)]
+    pub strict: bool,
+
+    /// Profile name (used as Cedar context attribute)
+    #[arg(long, short = 'p')]
+    pub profile: Option<String>,
 
     /// Print help
     #[arg(long, short = 'h', action = clap::ArgAction::Help, help_heading = "OPTIONS")]

@@ -170,7 +170,7 @@ pub(crate) fn run_shell(args: ShellArgs, silent: bool) -> Result<()> {
         return Ok(());
     }
 
-    let prepared = prepare_sandbox(&args.sandbox, silent)?;
+    let mut prepared = prepare_sandbox(&args.sandbox, silent)?;
 
     if prepared.allow_launch_services_active {
         print_allow_launch_services_warning(silent);
@@ -191,6 +191,66 @@ pub(crate) fn run_shell(args: ShellArgs, silent: bool) -> Result<()> {
         .ok()
         .filter(|id| !id.is_empty())
         .unwrap_or_else(crate::session::generate_session_id);
+
+    // Cedar authorization filter for shell sessions.
+    // Merge CLI args with profile-level Cedar config.
+    let shell_workdir = resolve_requested_workdir(args.sandbox.workdir.as_ref());
+    let merged_shell_cedar_policy: Vec<std::path::PathBuf> = prepared
+        .profile_cedar_policy
+        .iter()
+        .chain(args.sandbox.cedar_policy.iter())
+        .cloned()
+        .collect();
+    let merged_shell_cedar_entities: Vec<std::path::PathBuf> = prepared
+        .profile_cedar_entities
+        .iter()
+        .chain(args.sandbox.cedar_entities.iter())
+        .cloned()
+        .collect();
+    let shell_cedar_mode = if args.sandbox.cedar_policy.is_empty() {
+        match prepared.profile_cedar_mode {
+            Some(crate::profile::CedarModeConfig::Strict) => {
+                crate::cedar_session::CedarFilterMode::Strict
+            }
+            _ => crate::cedar_session::CedarFilterMode::Narrow,
+        }
+    } else {
+        args.sandbox.cedar_mode
+    };
+    if !merged_shell_cedar_policy.is_empty() {
+        if let Some(session_args) = crate::cedar_session::build_session_args(
+            &session_id,
+            args.sandbox.profile.as_deref().unwrap_or(""),
+            &shell_workdir,
+            &merged_shell_cedar_policy,
+        ) {
+            let cedar_result = crate::cedar_runtime::maybe_apply_cedar(
+                &mut prepared.caps,
+                &merged_shell_cedar_policy,
+                &merged_shell_cedar_entities,
+                &session_args,
+                shell_cedar_mode,
+            )?;
+            if let Some(ref result) = cedar_result {
+                if !silent && (result.removed_count > 0 || result.downgraded_count > 0) {
+                    eprintln!(
+                        "  [nono cedar] {} capability(ies) removed, {} downgraded",
+                        result.removed_count, result.downgraded_count
+                    );
+                }
+                for denied in &result.denied {
+                    if !denied.user_message.is_empty() {
+                        tracing::warn!(
+                            "Cedar denied cap {}: {}",
+                            denied.cap_index,
+                            denied.user_message
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     let network =
         prepare_proxy_launch_options(&args.sandbox, &prepared, silent, session_id.clone())?;
     let strategy = select_exec_strategy(

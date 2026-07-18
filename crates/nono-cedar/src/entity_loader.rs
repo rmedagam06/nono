@@ -46,6 +46,37 @@ pub fn load_entities_from_files(paths: &[impl AsRef<Path>]) -> Result<Entities> 
     Entities::from_json_str(&merged_json, None).map_err(|e| CedarError::EntityParse(e.to_string()))
 }
 
+/// Merge a base entity JSON array string (e.g., from `NonoEntityBuilder::to_json_string`)
+/// with zero or more additional entity JSON files, returning a combined `Entities` set.
+///
+/// This is the primary construction path in `cedar_runtime::maybe_apply_cedar`: the
+/// session/capability entities come from the builder, and any user-supplied `--cedar-entities`
+/// files are appended before Cedar processes them together.
+///
+/// - `base_json` must be a JSON array of Cedar entity objects.
+/// - Files in `extra_paths` must also be JSON arrays of Cedar entity objects.
+/// - Duplicate UIDs in the combined set cause a Cedar parse error (not silently merged).
+pub fn merge_entity_json_with_files(
+    base_json: &str,
+    extra_paths: &[impl AsRef<Path>],
+) -> Result<Entities> {
+    let mut all: Vec<serde_json::Value> = serde_json::from_str(base_json)
+        .map_err(|e| CedarError::EntityParse(format!("base entity JSON error: {e}")))?;
+    for path in extra_paths {
+        let src = std::fs::read_to_string(path.as_ref()).map_err(CedarError::Io)?;
+        let arr: Vec<serde_json::Value> = serde_json::from_str(&src).map_err(|e| {
+            CedarError::EntityParse(format!(
+                "JSON parse error in {}: {e}",
+                path.as_ref().display()
+            ))
+        })?;
+        all.extend(arr);
+    }
+    let merged =
+        serde_json::to_string(&all).map_err(|e| CedarError::EntityParse(e.to_string()))?;
+    Entities::from_json_str(&merged, None).map_err(|e| CedarError::EntityParse(e.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

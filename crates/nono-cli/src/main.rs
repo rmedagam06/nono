@@ -76,6 +76,9 @@ mod theme;
 mod timeouts;
 #[path = "tool-sandbox/mod.rs"]
 mod tool_sandbox;
+mod cedar_cmd;
+mod cedar_runtime;
+mod cedar_session;
 mod trust_cmd;
 mod trust_intercept;
 mod trust_keystore;
@@ -310,6 +313,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         };
 
         let effective = resolve_effective_proxy_settings(&args, &prepared);
@@ -370,6 +376,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         };
 
         let effective = resolve_effective_proxy_settings(&args, &prepared);

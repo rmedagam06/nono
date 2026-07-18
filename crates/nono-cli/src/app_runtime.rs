@@ -14,6 +14,7 @@ use crate::setup;
 use crate::startup_runtime::{
     allows_pre_exec_update_check, run_detached_launch, show_update_notification,
 };
+use crate::cedar_cmd;
 use crate::trust_cmd;
 use crate::update_check;
 use crate::why_runtime::run_why;
@@ -120,6 +121,9 @@ fn dispatch_command(
         Commands::OpenUrlHelper(args) => run_open_url_helper(args),
         Commands::PackUpdateHintHelper(args) => crate::pack_update_hint::run_refresh_helper(args),
         Commands::Completions(args) => run_completions(args),
+        Commands::Cedar(args) => {
+            run_command_with_update(update_handle, silent, || cedar_cmd::run_cedar(args))
+        }
     }
 }
 

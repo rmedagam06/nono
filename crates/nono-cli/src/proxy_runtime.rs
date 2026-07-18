@@ -2680,6 +2680,9 @@ mod tests {
             set_vars: None,
             profile_network_block: false,
             allow_http2_requested: false,
+            profile_cedar_policy: Vec::new(),
+            profile_cedar_entities: Vec::new(),
+            profile_cedar_mode: None,
         };
 
         let args = crate::cli::SandboxArgs::default();

@@ -5,20 +5,24 @@
 //! narrow what the OS sandbox already allows — it cannot grant capabilities
 //! the profile system didn't already include.
 
+pub mod cache;
 pub mod engine;
 pub mod entity_builder;
 pub mod entity_loader;
 pub mod error;
+pub mod ffi_types;
 pub mod filter;
 pub mod loader;
 pub mod request_builder;
 pub mod schema;
 pub mod session;
 
+pub use cache::{invalidate_cache, load_policy_set_cached};
 pub use engine::{CedarDecision, CedarPolicyEngine, DecisionOutcome};
 pub use entity_builder::NonoEntityBuilder;
-pub use entity_loader::{load_entities, load_entities_from_files};
+pub use entity_loader::{load_entities, load_entities_from_files, merge_entity_json_with_files};
 pub use error::{CedarError, Result};
+pub use ffi_types::{NoceCedarFilterMode, NoceCedarFilterSummary, NoceCedarOutcome};
 pub use filter::{CedarCapabilityFilter, DeniedCapInfo, FilterMode, FilterResult, merge_decisions};
 pub use loader::{load_policy_set, load_policy_set_from_files};
 pub use request_builder::{EvalRequest, fs_eval_requests, unix_socket_eval_requests};
