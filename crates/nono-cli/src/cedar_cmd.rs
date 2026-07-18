@@ -4,6 +4,7 @@
 //! - `nono cedar eval`     — evaluate a Cedar policy against a single resource.
 //! - `nono cedar explain`  — explain Cedar decisions for a simulated capability set.
 
+#[cfg(feature = "cedar")]
 use std::path::PathBuf;
 
 use nono::{NonoError, Result};

@@ -18,7 +18,9 @@
 use nono::{CapabilitySet, NonoError, Result};
 use std::path::PathBuf;
 
-use crate::cedar_session::{CedarFilterMode, CedarFilterResult, CedarSessionArgs, DeniedCap};
+use crate::cedar_session::{CedarFilterMode, CedarFilterResult, CedarSessionArgs};
+#[cfg(feature = "cedar")]
+use crate::cedar_session::DeniedCap;
 
 /// Type alias so callers don't have to spell out the full `Result<Option<…>>`.
 pub type MaybeCedarResult = Result<Option<CedarFilterResult>>;
@@ -112,7 +114,6 @@ pub fn maybe_apply_cedar(
         .into_iter()
         .map(|d| DeniedCap {
             cap_index: d.cap_index,
-            is_explicit_forbid: d.is_explicit_forbid,
             user_message: d.user_message,
         })
         .collect();

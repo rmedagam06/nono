@@ -67,7 +67,7 @@ enum MergeOutcome {
 /// 4. Read implicit-deny, write permit → `DowngradeToWrite`
 ///    (logs a warning; likely a policy authoring error).
 /// 5. Both implicit-deny → `Remove`.
-pub fn merge_decisions(read: &CedarDecision, write: &CedarDecision) -> MergeOutcome {
+fn merge_decisions(read: &CedarDecision, write: &CedarDecision) -> MergeOutcome {
     let read_explicit = matches!(
         read.outcome,
         DecisionOutcome::Deny {

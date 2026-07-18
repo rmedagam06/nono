@@ -1309,10 +1309,10 @@ impl CapabilitySet {
     /// only acts when the current mode is `ReadWrite`. Does nothing if the
     /// index is out of range or the cap is not `ReadWrite`.
     pub fn downgrade_fs_access(&mut self, fs_index: usize, new_mode: AccessMode) {
-        if let Some(cap) = self.fs.get_mut(fs_index) {
-            if cap.access == AccessMode::ReadWrite {
-                cap.access = new_mode;
-            }
+        if let Some(cap) = self.fs.get_mut(fs_index)
+            && cap.access == AccessMode::ReadWrite
+        {
+            cap.access = new_mode;
         }
     }
 

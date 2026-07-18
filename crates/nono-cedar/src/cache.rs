@@ -14,7 +14,7 @@ use std::sync::Mutex;
 
 use cedar_policy::PolicySet;
 
-use crate::error::{CedarError, Result};
+use crate::error::Result;
 use crate::loader::load_policy_set_from_files;
 
 struct CacheEntry {

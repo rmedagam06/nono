@@ -63,8 +63,6 @@ pub struct CedarFilterResult {
 pub struct DeniedCap {
     /// Flat combined index matching `CedarDecision::cap_index`.
     pub cap_index: usize,
-    /// True when an explicit `forbid(...)` policy fired.
-    pub is_explicit_forbid: bool,
     /// Human-readable explanation surfaced to the user.
     pub user_message: String,
 }
