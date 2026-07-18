@@ -29,6 +29,12 @@ pub enum CedarError {
 
     #[error("Cedar authorization error: {0}")]
     AuthorizationFailed(String),
+
+    /// Returned when `FilterMode::Strict` or an explicit `forbid` causes the
+    /// capability filter to produce a hard error rather than silently removing
+    /// the capability.  Carries a human-readable message for the user.
+    #[error("Cedar policy conflict: {0}")]
+    PolicyConflict(String),
 }
 
 pub type Result<T> = std::result::Result<T, CedarError>;
