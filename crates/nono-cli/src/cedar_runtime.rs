@@ -101,8 +101,11 @@ pub fn maybe_apply_cedar(
         CedarFilterMode::Strict => NativeMode::Strict,
     };
 
-    let filter = CedarCapabilityFilter::apply(&decisions, caps, native_mode)
-        .map_err(|e| NonoError::CedarDenied { reason: e.to_string() })?;
+    let filter = CedarCapabilityFilter::apply(&decisions, caps, native_mode).map_err(|e| {
+        NonoError::CedarDenied {
+            reason: e.to_string(),
+        }
+    })?;
 
     let denied: Vec<DeniedCap> = filter
         .denied

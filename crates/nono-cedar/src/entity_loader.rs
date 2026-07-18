@@ -72,8 +72,7 @@ pub fn merge_entity_json_with_files(
         })?;
         all.extend(arr);
     }
-    let merged =
-        serde_json::to_string(&all).map_err(|e| CedarError::EntityParse(e.to_string()))?;
+    let merged = serde_json::to_string(&all).map_err(|e| CedarError::EntityParse(e.to_string()))?;
     Entities::from_json_str(&merged, None).map_err(|e| CedarError::EntityParse(e.to_string()))
 }
 

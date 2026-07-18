@@ -1424,19 +1424,11 @@ pub struct SandboxArgs {
     /// Capabilities denied by Cedar are removed before the sandbox is applied.
     /// Requires `--features cedar` at build time; a hard error is returned
     /// otherwise (never silently ignored).
-    #[arg(
-        long = "cedar-policy",
-        value_name = "FILE",
-        help_heading = "CEDAR"
-    )]
+    #[arg(long = "cedar-policy", value_name = "FILE", help_heading = "CEDAR")]
     pub cedar_policy: Vec<PathBuf>,
 
     /// Cedar entity file(s) to merge with the auto-generated session entities (repeatable).
-    #[arg(
-        long = "cedar-entities",
-        value_name = "FILE",
-        help_heading = "CEDAR"
-    )]
+    #[arg(long = "cedar-entities", value_name = "FILE", help_heading = "CEDAR")]
     pub cedar_entities: Vec<PathBuf>,
 
     /// How Cedar handles implicitly-denied capabilities (narrow = remove silently,

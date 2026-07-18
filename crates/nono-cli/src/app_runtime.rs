@@ -1,4 +1,5 @@
 use crate::audit_commands;
+use crate::cedar_cmd;
 use crate::cli::{Cli, Commands, RunArgs, SetupArgs};
 use crate::command_runtime::{run_sandbox, run_shell, run_wrap};
 use crate::completions::run_completions;
@@ -14,7 +15,6 @@ use crate::setup;
 use crate::startup_runtime::{
     allows_pre_exec_update_check, run_detached_launch, show_update_notification,
 };
-use crate::cedar_cmd;
 use crate::trust_cmd;
 use crate::update_check;
 use crate::why_runtime::run_why;

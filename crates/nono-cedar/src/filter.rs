@@ -231,7 +231,7 @@ impl CedarCapabilityFilter {
 mod tests {
     use std::path::PathBuf;
 
-    use nono::{CapabilitySource, FsCapability, UnixSocketCapability, UnixSocketMode, SocketScope};
+    use nono::{CapabilitySource, FsCapability, SocketScope, UnixSocketCapability, UnixSocketMode};
 
     use super::*;
     use crate::engine::DecisionOutcome;
@@ -408,7 +408,10 @@ mod tests {
         caps.add_fs(fs_cap(AccessMode::Read)); // index 0
         caps.add_unix_socket(unix_cap()); // index 1 (n_fs=1)
 
-        let decisions = vec![permit(0, "read_dir"), implicit_deny(1, "connect_unix_socket")];
+        let decisions = vec![
+            permit(0, "read_dir"),
+            implicit_deny(1, "connect_unix_socket"),
+        ];
         let result =
             CedarCapabilityFilter::apply(&decisions, &mut caps, FilterMode::Narrow).expect("ok");
 
@@ -441,7 +444,10 @@ mod tests {
     fn merge_both_permit_is_keep() {
         let r = permit(0, "read_dir");
         let w = permit(0, "write_dir");
-        assert!(matches!(merge_decisions(&r, &w), MergeOutcome::KeepReadWrite));
+        assert!(matches!(
+            merge_decisions(&r, &w),
+            MergeOutcome::KeepReadWrite
+        ));
     }
 
     #[test]

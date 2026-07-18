@@ -45,7 +45,9 @@ pub fn load_policy_set_cached(paths: &[PathBuf]) -> Result<PolicySet> {
         .collect();
     key.sort_unstable();
 
-    let guard = CACHE.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let guard = CACHE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
 
     if let Some(entry) = guard.as_ref() {
         if entry.key == key {

@@ -422,7 +422,11 @@ pub(crate) fn prepare_run_launch_plan(
                 }
                 for denied in &result.denied {
                     if !denied.user_message.is_empty() {
-                        tracing::warn!("Cedar denied cap {}: {}", denied.cap_index, denied.user_message);
+                        tracing::warn!(
+                            "Cedar denied cap {}: {}",
+                            denied.cap_index,
+                            denied.user_message
+                        );
                     }
                 }
             }

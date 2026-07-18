@@ -39,7 +39,11 @@ fn run_validate(args: crate::cli::CedarValidateArgs) -> Result<()> {
         eprintln!(
             "  [nono cedar] {} policy file(s) valid{}",
             policy_files.len(),
-            if args.no_schema { "" } else { " (schema validated)" }
+            if args.no_schema {
+                ""
+            } else {
+                " (schema validated)"
+            }
         );
         Ok(())
     }
@@ -59,9 +63,8 @@ fn run_eval(args: crate::cli::CedarEvalArgs) -> Result<()> {
     {
         use nono::{AccessMode, CapabilitySet, CapabilitySource, FsCapability};
         use nono_cedar::{
-            CedarPolicyEngine, EvalRequest, NonoEntityBuilder, NonoSession,
-            fs_eval_requests, load_policy_set_from_files, merge_entity_json_with_files,
-            nono_schema,
+            CedarPolicyEngine, EvalRequest, NonoEntityBuilder, NonoSession, fs_eval_requests,
+            load_policy_set_from_files, merge_entity_json_with_files, nono_schema,
         };
 
         let policy_files: Vec<PathBuf> = args.policy.into_iter().collect();
@@ -71,9 +74,7 @@ fn run_eval(args: crate::cli::CedarEvalArgs) -> Result<()> {
             ));
         }
         let resource = args.resource.ok_or_else(|| {
-            NonoError::ConfigParse(
-                "nono cedar eval: --resource <PATH> is required".into(),
-            )
+            NonoError::ConfigParse("nono cedar eval: --resource <PATH> is required".into())
         })?;
         let action = args.action.unwrap_or_else(|| "read_dir".to_string());
 
@@ -89,7 +90,11 @@ fn run_eval(args: crate::cli::CedarEvalArgs) -> Result<()> {
         let workdir = std::env::current_dir()
             .map(|p| p.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let os_name = if cfg!(target_os = "macos") { "macos" } else { "linux" };
+        let os_name = if cfg!(target_os = "macos") {
+            "macos"
+        } else {
+            "linux"
+        };
 
         let builder = NonoEntityBuilder::new(
             &os_username,
@@ -121,8 +126,7 @@ fn run_eval(args: crate::cli::CedarEvalArgs) -> Result<()> {
             source: CapabilitySource::User,
         });
         let requests = fs_eval_requests(caps.fs_capabilities(), 0);
-        let matching: Vec<&EvalRequest> =
-            requests.iter().filter(|r| r.action == action).collect();
+        let matching: Vec<&EvalRequest> = requests.iter().filter(|r| r.action == action).collect();
 
         if matching.is_empty() {
             return Err(NonoError::ConfigParse(format!(
@@ -201,7 +205,11 @@ fn run_explain(args: crate::cli::CedarExplainArgs) -> Result<()> {
         let workdir = std::env::current_dir()
             .map(|p| p.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let os_name = if cfg!(target_os = "macos") { "macos" } else { "linux" };
+        let os_name = if cfg!(target_os = "macos") {
+            "macos"
+        } else {
+            "linux"
+        };
 
         let mut builder = NonoEntityBuilder::new(
             &os_username,
@@ -244,8 +252,11 @@ fn run_explain(args: crate::cli::CedarExplainArgs) -> Result<()> {
         } else {
             FilterMode::Narrow
         };
-        let result = CedarCapabilityFilter::apply(&decisions, &mut caps, mode)
-            .map_err(|e| NonoError::CedarDenied { reason: e.to_string() })?;
+        let result = CedarCapabilityFilter::apply(&decisions, &mut caps, mode).map_err(|e| {
+            NonoError::CedarDenied {
+                reason: e.to_string(),
+            }
+        })?;
 
         println!(
             "Cedar explain: {} path(s), {} removed, {} downgraded",
